@@ -4,15 +4,15 @@ class Sensor {
   }
 
   readValue() {
-    throw new Error("Method readValue() must be implemented");
+    throw new Error("Value not found!");
   }
 
   getUnit() {
-    throw new Error("Method getUnit() must be implemented");
+    throw new Error("Value not found!");
   }
 
   getSafeRange() {
-    throw new Error("Method getSafeRange() must be implemented");
+    throw new Error("Value not found!");
   }
 }
 

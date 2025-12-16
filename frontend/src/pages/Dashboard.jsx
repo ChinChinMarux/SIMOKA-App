@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-
 class SensorData {
   constructor(name, unit, min, max) {
     this.name = name;
@@ -31,14 +30,8 @@ function SensorChart({ title, data, color = "#3b82f6" }) {
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop
-              offset="0%"
-              style={{ stopColor: color, stopOpacity: 0.3 }}
-            />
-            <stop
-              offset="100%"
-              style={{ stopColor: color, stopOpacity: 0 }}
-            />
+            <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.3 }} />
+            <stop offset="100%" style={{ stopColor: color, stopOpacity: 0 }} />
           </linearGradient>
         </defs>
         <polygon
@@ -86,6 +79,7 @@ function InfoCard({ icon, title, description, color }) {
         style={{
           width: "48px",
           height: "48px",
+          marginTop: "25px",
           borderRadius: "12px",
           background: `linear-gradient(135deg, ${color}40, ${color}20)`,
           display: "flex",
@@ -123,21 +117,37 @@ function InfoCard({ icon, title, description, color }) {
 }
 
 async function getWaterData() {
-  return {
-    pH: (7 + Math.random() * 2 - 1).toFixed(2),
-    temperature: (27 + Math.random() * 4 - 2).toFixed(1),
-    TDS: (250 + Math.random() * 100 - 50).toFixed(0),
-  };
+  try {
+    const response = await fetch("http://localhost:5000/api/dataDummy");
+    if (!response.ok) throw new Error("API error");
+
+    const raw = await response.json();
+
+    return {
+      pH: Number(raw.pH),
+      temperature: Number(raw.temperature),
+      TDS: Number(raw.TDS),
+    };
+  } catch (err) {
+    console.error("Gagal mengambil data API:", err);
+
+    return {
+      pH: 0,
+      temperature: 0,
+      TDS: 0,
+    };
+  }
 }
 
 const phSensor = new SensorData("pH", "pH", 6.5, 8.5);
-const tempSensor = new SensorData("Temperature", "°C", 20, 35);
-const tdsSensor = new SensorData("TDS", "ppm", 0, 500);
+const tempSensor = new SensorData("Temperature", "°C", 25, 35);
+const tdsSensor = new SensorData("TDS", "ppm", 0, 300);
 
 export default function Dashboard() {
   const [ph, setPh] = useState([]);
   const [temp, setTemp] = useState([]);
   const [tds, setTds] = useState([]);
+  const [infoExpanded, setInfoExpanded] = useState(true); // true = terbuka secara default
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -161,7 +171,8 @@ export default function Dashboard() {
 
   const containerStyle = {
     minHeight: "100vh",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
+    background:
+      "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
     padding: "32px",
   };
 
@@ -356,12 +367,141 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Information Section */}
+        <div style={infoSectionStyle}>
+          <h2
+            style={{
+              ...sectionTitleStyle,
+              cursor: "pointer",
+              userSelect: "none",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+            onClick={() => setInfoExpanded(!infoExpanded)}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <svg
+                style={{ width: "28px", height: "28px", color: "#3b82f6" }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Informasi Parameter Kualitas Air
+            </div>
+            <svg
+              style={{
+                width: "24px",
+                height: "24px",
+                color: "#64748b",
+                transform: infoExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease",
+              }}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </h2>
+          {infoExpanded && (
+            <div style={{ display: "grid", gap: "16px" }}>
+              <InfoCard
+                icon={
+                  <svg
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      color: sensorColors.ph,
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    />
+                  </svg>
+                }
+                title="pH Level (Derajat Keasaman)"
+                description="pH mengukur tingkat keasaman atau kebasaan air. Skala pH berkisar dari 0-14, dengan 7 sebagai netral. Air yang sehat untuk dikonsumsi memiliki pH antara 6.5-8.5. pH yang terlalu rendah (asam) atau terlalu tinggi (basa) dapat berbahaya bagi kesehatan dan merusak sistem pipa."
+                color={sensorColors.ph}
+              />
+              <InfoCard
+                icon={
+                  <svg
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      color: sensorColors.temp,
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                }
+                title="Temperature (Suhu Air)"
+                description="Suhu air mempengaruhi kenyamanan penggunaan dan pertumbuhan mikroorganisme. Suhu ideal untuk air minum adalah 20-35°C. Suhu yang terlalu tinggi dapat mempercepat pertumbuhan bakteri, sementara suhu yang terlalu rendah dapat mempengaruhi kenyamanan penggunaan."
+                color={sensorColors.temp}
+              />
+              <InfoCard
+                icon={
+                  <svg
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      color: sensorColors.tds,
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                    />
+                  </svg>
+                }
+                title="TDS (Total Padatan Terlarut)"
+                description="TDS mengukur jumlah total zat terlarut dalam air, termasuk mineral, garam, dan logam. Diukur dalam ppm (parts per million). TDS ideal untuk air minum adalah 0-500 ppm. TDS yang terlalu tinggi dapat mengindikasikan kontaminasi atau kandungan mineral berlebih yang mempengaruhi rasa dan kualitas air."
+                color={sensorColors.tds}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Status Overview Cards */}
         <div style={gridStyle}>
           {/* pH Card */}
           <div style={cardStyle}>
             <div style={cardHeaderStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <div
                   style={{
                     width: "40px",
@@ -374,7 +514,11 @@ export default function Dashboard() {
                   }}
                 >
                   <svg
-                    style={{ width: "24px", height: "24px", color: sensorColors.ph }}
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      color: sensorColors.ph,
+                    }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -408,7 +552,9 @@ export default function Dashboard() {
           {/* Temperature Card */}
           <div style={cardStyle}>
             <div style={cardHeaderStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <div
                   style={{
                     width: "40px",
@@ -421,7 +567,11 @@ export default function Dashboard() {
                   }}
                 >
                   <svg
-                    style={{ width: "24px", height: "24px", color: sensorColors.temp }}
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      color: sensorColors.temp,
+                    }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -435,7 +585,7 @@ export default function Dashboard() {
                   </svg>
                 </div>
                 <div>
-                  <p style={labelStyle}>Temperature</p>
+                  <p style={labelStyle}>Suhu</p>
                   <div style={valueContainerStyle}>
                     <span style={valueStyle}>{lastTemp.toFixed(1)}</span>
                     <span style={unitStyle}>°C</span>
@@ -448,14 +598,20 @@ export default function Dashboard() {
               Normal: {tempSensor.min} - {tempSensor.max} °C
             </div>
             <div style={miniChartStyle}>
-              <SensorChart title="Temperature" data={temp} color={sensorColors.temp} />
+              <SensorChart
+                title="Temperature"
+                data={temp}
+                color={sensorColors.temp}
+              />
             </div>
           </div>
 
           {/* TDS Card */}
           <div style={cardStyle}>
             <div style={cardHeaderStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
                 <div
                   style={{
                     width: "40px",
@@ -468,7 +624,11 @@ export default function Dashboard() {
                   }}
                 >
                   <svg
-                    style={{ width: "24px", height: "24px", color: sensorColors.tds }}
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      color: sensorColors.tds,
+                    }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -482,7 +642,7 @@ export default function Dashboard() {
                   </svg>
                 </div>
                 <div>
-                  <p style={labelStyle}>Total Dissolved Solid</p>
+                  <p style={labelStyle}>Total Padatan Terlarut</p>
                   <div style={valueContainerStyle}>
                     <span style={valueStyle}>{lastTds.toFixed(0)}</span>
                     <span style={unitStyle}>ppm</span>
@@ -492,93 +652,11 @@ export default function Dashboard() {
               <div style={badgeStyle(tdsStatus.color)}>{tdsStatus.label}</div>
             </div>
             <div style={rangeStyle}>
-              Normal: {tdsSensor.min} - {tdsSensor.max} ppm
+              Normal: {"<"} {tdsSensor.max} ppm
             </div>
             <div style={miniChartStyle}>
               <SensorChart title="TDS" data={tds} color={sensorColors.tds} />
             </div>
-          </div>
-        </div>
-
-        {/* Information Section */}
-        <div style={infoSectionStyle}>
-          <h2 style={sectionTitleStyle}>
-            <svg
-              style={{ width: "28px", height: "28px", color: "#3b82f6" }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Informasi Parameter Kualitas Air
-          </h2>
-          <div style={{ display: "grid", gap: "16px" }}>
-            <InfoCard
-              icon={
-                <svg
-                  style={{ width: "24px", height: "24px", color: sensorColors.ph }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                  />
-                </svg>
-              }
-              title="pH Level (Derajat Keasaman)"
-              description="pH mengukur tingkat keasaman atau kebasaan air. Skala pH berkisar dari 0-14, dengan 7 sebagai netral. Air yang sehat untuk dikonsumsi memiliki pH antara 6.5-8.5. pH yang terlalu rendah (asam) atau terlalu tinggi (basa) dapat berbahaya bagi kesehatan dan merusak sistem pipa."
-              color={sensorColors.ph}
-            />
-            <InfoCard
-              icon={
-                <svg
-                  style={{ width: "24px", height: "24px", color: sensorColors.temp }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              }
-              title="Temperature (Suhu Air)"
-              description="Suhu air mempengaruhi kenyamanan penggunaan dan pertumbuhan mikroorganisme. Suhu ideal untuk air minum adalah 20-35°C. Suhu yang terlalu tinggi dapat mempercepat pertumbuhan bakteri, sementara suhu yang terlalu rendah dapat mempengaruhi kenyamanan penggunaan."
-              color={sensorColors.temp}
-            />
-            <InfoCard
-              icon={
-                <svg
-                  style={{ width: "24px", height: "24px", color: sensorColors.tds }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                  />
-                </svg>
-              }
-              title="TDS (Total Dissolved Solids)"
-              description="TDS mengukur jumlah total zat terlarut dalam air, termasuk mineral, garam, dan logam. Diukur dalam ppm (parts per million). TDS ideal untuk air minum adalah 0-500 ppm. TDS yang terlalu tinggi dapat mengindikasikan kontaminasi atau kandungan mineral berlebih yang mempengaruhi rasa dan kualitas air."
-              color={sensorColors.tds}
-            />
           </div>
         </div>
 
@@ -599,7 +677,11 @@ export default function Dashboard() {
                 }}
               >
                 <svg
-                  style={{ width: "20px", height: "20px", color: sensorColors.ph }}
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    color: sensorColors.ph,
+                  }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -615,7 +697,11 @@ export default function Dashboard() {
               pH Sensor - Real-time Monitoring
             </h3>
             <div style={detailedChartStyle}>
-              <SensorChart title="pH Sensor" data={ph} color={sensorColors.ph} />
+              <SensorChart
+                title="pH Sensor"
+                data={ph}
+                color={sensorColors.ph}
+              />
             </div>
           </div>
 
@@ -634,7 +720,11 @@ export default function Dashboard() {
                 }}
               >
                 <svg
-                  style={{ width: "20px", height: "20px", color: sensorColors.temp }}
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    color: sensorColors.temp,
+                  }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -647,10 +737,14 @@ export default function Dashboard() {
                   />
                 </svg>
               </div>
-              Temperature - Real-time Monitoring
+              Suhu - Real-time Monitoring
             </h3>
             <div style={detailedChartStyle}>
-              <SensorChart title="Temperature" data={temp} color={sensorColors.temp} />
+              <SensorChart
+                title="Temperature"
+                data={temp}
+                color={sensorColors.temp}
+              />
             </div>
           </div>
 
@@ -669,7 +763,11 @@ export default function Dashboard() {
                 }}
               >
                 <svg
-                  style={{ width: "20px", height: "20px", color: sensorColors.tds }}
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    color: sensorColors.tds,
+                  }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -682,7 +780,7 @@ export default function Dashboard() {
                   />
                 </svg>
               </div>
-              TDS - Real-time Monitoring
+              Total Padatan terlarut - Real-time Monitoring
             </h3>
             <div style={detailedChartStyle}>
               <SensorChart title="TDS" data={tds} color={sensorColors.tds} />

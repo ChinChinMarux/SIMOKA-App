@@ -1,3 +1,5 @@
+const { processWaterData } = require("./waterController");
+
 class DataController {
   static getWaterQuality(req, res) {
     const data = {
@@ -7,6 +9,8 @@ class DataController {
       TSS: (10 + Math.random() * 30).toFixed(0),
       time: new Date().toLocaleTimeString(),
     };
+
+    processWaterData(data);
 
     res.json(data);
   }

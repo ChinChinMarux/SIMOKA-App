@@ -19,7 +19,13 @@ app.listen(5000, () => {
 });
 
 router.get("/dataDummy", (req, res) => {
-  DataController.getWaterQuality(req, res);
+  try {
+    const result = processWaterData(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error("Endpoint error:", error);
+    res.status(500).json({ error: "Failed to process water data" });
+  }
 });
 
 module.exports = router;

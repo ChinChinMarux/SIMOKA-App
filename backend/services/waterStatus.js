@@ -1,10 +1,10 @@
 class WaterStatus {
   getLabel() {
-    throw new Error("Method getLabel() must be implemented");
+    throw new Error("Value invalid!");
   }
 
   getColor() {
-    throw new Error("Method getColor() must be implemented");
+    throw new Error("Value invalid!");
   }
 }
 
